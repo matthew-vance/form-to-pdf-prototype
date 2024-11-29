@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { date, z } from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { jsPDF } from "jspdf";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,10 +23,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 const formSchema = z
   .object({
-    name: z.string(),
+    name: z.string().min(1),
     age: z.coerce.number().positive().int(),
     date: date(),
   })
@@ -33,17 +35,38 @@ const formSchema = z
 type FormSchema = z.infer<typeof formSchema>;
 
 function App() {
+  const [pdfDataUrl, setPdfDataUrl] = useState<string>();
+
+  function generatePdf(formData?: Partial<FormSchema>) {
+    const doc = new jsPDF();
+
+    doc.setFont("Helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Generated PDF", 20, 20);
+    doc.setFont("Helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Name: ${formData?.name ?? ""}`, 20, 40);
+    doc.text(`Age: ${formData?.age?.toString() ?? ""}`, 20, 50);
+    doc.text(
+      `Date: ${formData?.date ? format(formData.date, "PPP") : ""}`,
+      20,
+      60
+    );
+
+    const pdfUrl = doc.output("dataurlstring");
+    setPdfDataUrl(pdfUrl);
+  }
+
+  useEffect(() => {
+    generatePdf();
+  }, []);
+
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      age: 0,
-      date: new Date(),
-    },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  function onSubmit(values: FormSchema) {
+    generatePdf(values);
   }
 
   function TypographyH1({ children }: { children: React.ReactNode }) {
@@ -93,7 +116,7 @@ function App() {
                   <FormItem>
                     <FormLabel>Age</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" placeholder="Age" {...field} />
                     </FormControl>
                     <FormDescription>Sample number input.</FormDescription>
                     <FormMessage />
@@ -146,8 +169,15 @@ function App() {
             </form>
           </Form>
         </section>
-        <section className="w-2/3">
+        <section className="w-2/3 flex flex-col">
           <TypographyH2>Preview side</TypographyH2>
+          {pdfDataUrl && (
+            <iframe
+              src={pdfDataUrl}
+              title="PDF Preview"
+              className="w-full h-full"
+            />
+          )}
         </section>
       </main>
     </div>
