@@ -180,7 +180,11 @@ function App() {
                     <FormItem>
                       <FormLabel>Free text</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Free text" {...field} />
+                        <Textarea
+                          placeholder="Free text"
+                          {...field}
+                          className="h-60"
+                        />
                       </FormControl>
                       <FormDescription>
                         A sample textarea input.
