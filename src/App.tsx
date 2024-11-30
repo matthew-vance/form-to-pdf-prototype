@@ -4,7 +4,15 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { jsPDF } from "jspdf";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import { faker } from "@faker-js/faker";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import imgUrl from "./assets/img.png";
 
@@ -49,7 +57,10 @@ function App() {
     },
   });
 
+  const ref = useRef<HTMLDivElement>(null);
+
   const [pdfDataUrl, setPdfDataUrl] = useState<string>();
+  const [pdfDoc, setPdfDoc] = useState<jsPDF>();
 
   function generatePdf(formData?: Partial<FormSchema>) {
     const doc = new jsPDF({ format: "legal" });
@@ -58,7 +69,6 @@ function App() {
     const middle = pageWidth / 2;
 
     doc
-      .line(middle, pageHeight, middle, 0)
       .setFont("Helvetica", "bold")
       .setFontSize(16)
       .text("Generated PDF", 20, 20)
@@ -78,12 +88,22 @@ function App() {
       .text("This is a footer", 20, pageHeight - 20);
 
     const pdfUrl = doc.output("dataurlstring");
-    console.log(pdfUrl);
     setPdfDataUrl(pdfUrl);
+    setPdfDoc(doc);
+    return doc;
   }
 
   function onSubmit(values: FormSchema) {
     generatePdf(values);
+    ref.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function downloadPdf() {
+    if (pdfDoc) {
+      pdfDoc.save("generated.pdf");
+    } else {
+      generatePdf(form.getValues()).save("generated.pdf");
+    }
   }
 
   useEffect(() => {
@@ -91,13 +111,13 @@ function App() {
   }, [form]);
 
   return (
-    <div className="container mx-auto px-2">
-      <main className="grid grid-cols-3 gap-4 min-h-screen">
-        <div className="col-span-1 flex flex-col gap-4">
+    <div className="container mx-auto">
+      <main className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="flex flex-col gap-4 overflow-auto max-h-screen">
           <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
             Form to PDF Prototype
           </h1>
-          <section>
+          <section className="my-2">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
@@ -193,21 +213,28 @@ function App() {
                     </FormItem>
                   )}
                 />
-                <div className="flex gap-2">
-                  <Button type="submit">Generate</Button>
+                <div className="flex gap-2 flex-row-reverse">
+                  <Button type="button" onClick={() => downloadPdf()}>
+                    Download
+                  </Button>
+                  <Button type="submit" variant="secondary">
+                    Preview
+                  </Button>
                 </div>
               </form>
             </Form>
           </section>
         </div>
-        <section className="col-span-2">
+        <section className="overflow-auto max-h-screen">
           {pdfDataUrl && (
-            <object
-              data={pdfDataUrl + "#view=FitV&navpanes=0"}
-              type="application/pdf"
-              width="100%"
-              height="100%"
-            ></object>
+            <div
+              ref={ref}
+              className="border-input border my-2 px-3 py-1 w-full rounded-md bg-transparent"
+            >
+              <Document file={pdfDataUrl}>
+                <Page pageNumber={1} />
+              </Document>
+            </div>
           )}
         </section>
       </main>

@@ -1,15 +1,13 @@
-import { app, BrowserWindow, screen } from "electron";
+import { app, BrowserWindow } from "electron";
 import url from "url";
 import { join } from "node:path";
 
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 function createWindow() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
   const win = new BrowserWindow({
-    width,
-    height,
+    width: 1320,
+    height: 1064,
     webPreferences: {
       preload: join(__dirname, "preload.ts"),
     },
