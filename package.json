@@ -9,7 +9,8 @@
     "dev": "vite",
     "electron": "NODE_OPTIONS=\"--import=tsx\" electron .",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "NODE_OPTIONS=\"--import=tsx\" NODE_ENV=\"production\" electron ."
   },
   "dependencies": {
     "@faker-js/faker": "^9.2.0",
